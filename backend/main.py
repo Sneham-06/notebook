@@ -1,3 +1,8 @@
+# SQLite override for ChromaDB on cloud providers like Render
+__import__('pysqlite3')
+import sys
+sys.modules['sqlite3'] = sys.modules.pop('pysqlite3')
+
 import os
 import shutil
 import uuid
