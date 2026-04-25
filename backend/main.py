@@ -4,9 +4,13 @@ import uuid
 import traceback
 import json
 from typing import List, Optional
-from fastapi import FastAPI, UploadFile, File, Form, HTTPException
+from fastapi import FastAPI, UploadFile, File, Form, HTTPException, Depends, status
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 from pydantic import BaseModel
+from passlib.context import CryptContext
+from jose import JWTError, jwt
+from datetime import datetime, timedelta
 from langchain_community.document_loaders import PyPDFLoader, TextLoader
 from langchain.text_splitter import RecursiveCharacterTextSplitter
 from langchain_community.vectorstores import Chroma
@@ -41,6 +45,29 @@ os.makedirs(CHROMA_DIR, exist_ok=True)
 # Shared embeddings
 embeddings = HuggingFaceEmbeddings(model_name="all-MiniLM-L6-v2")
 
+# Auth Configuration
+SECRET_KEY = os.getenv("JWT_SECRET_KEY", "fallback_secret_key_change_me_in_production")
+ALGORITHM = "HS256"
+ACCESS_TOKEN_EXPIRE_MINUTES = 60 * 24 * 7 # 7 days
+
+pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
+oauth2_scheme = OAuth2PasswordBearer(tokenUrl="auth/login")
+
+USERS_FILE = "users.json"
+
+def load_users():
+    if not os.path.exists(USERS_FILE):
+        return {}
+    with open(USERS_FILE, "r") as f:
+        try:
+            return json.load(f)
+        except:
+            return {}
+
+def save_users(users):
+    with open(USERS_FILE, "w") as f:
+        json.dump(users, f, indent=4)
+
 # In-memory cache for active db objects
 _db_cache = {}
 
@@ -65,6 +92,43 @@ def get_db(session_id: str):
         collection_name="notes"
     )
     return _db_cache[sid]
+
+class UserRegister(BaseModel):
+    username: str
+    password: str
+
+@app.post("/auth/register")
+async def register(user: UserRegister):
+    users = load_users()
+    if user.username in users:
+        raise HTTPException(status_code=400, detail="Username already registered")
+    
+    hashed_password = pwd_context.hash(user.password)
+    users[user.username] = {
+        "username": user.username,
+        "password": hashed_password
+    }
+    save_users(users)
+    return {"message": "User registered successfully"}
+
+@app.post("/auth/login")
+async def login(form_data: OAuth2PasswordRequestForm = Depends()):
+    users = load_users()
+    user_dict = users.get(form_data.username)
+    
+    if not user_dict or not pwd_context.verify(form_data.password, user_dict["password"]):
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Incorrect username or password",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+    
+    access_token_expires = timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
+    expire = datetime.utcnow() + access_token_expires
+    to_encode = {"sub": form_data.username, "exp": expire}
+    encoded_jwt = jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
+    
+    return {"access_token": encoded_jwt, "token_type": "bearer", "username": form_data.username}
 
 @app.post("/upload")
 async def upload_file(
