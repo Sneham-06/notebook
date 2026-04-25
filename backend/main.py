@@ -7,7 +7,7 @@ from typing import List, Optional
 from fastapi import FastAPI, UploadFile, File, Form, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
-from langchain_community.document_loaders import PyPDFLoader, TextLoader, UnstructuredMarkdownLoader
+from langchain_community.document_loaders import PyPDFLoader, TextLoader
 from langchain.text_splitter import RecursiveCharacterTextSplitter
 from langchain_community.vectorstores import Chroma
 from langchain_huggingface import HuggingFaceEmbeddings
@@ -82,7 +82,7 @@ async def upload_file(
         elif file.filename.lower().endswith(".txt"):
             loader = TextLoader(file_path)
         elif file.filename.lower().endswith(".md"):
-            loader = UnstructuredMarkdownLoader(file_path)
+            loader = TextLoader(file_path, encoding="utf-8")
         else:
             return {"error": "Unsupported file type"}
             
