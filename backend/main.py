@@ -19,7 +19,7 @@ from datetime import datetime, timedelta
 from langchain_community.document_loaders import PyPDFLoader, TextLoader
 from langchain.text_splitter import RecursiveCharacterTextSplitter
 from langchain_community.vectorstores import Chroma
-from langchain_huggingface import HuggingFaceEmbeddings
+from langchain_community.embeddings.fastembed import FastEmbedEmbeddings
 from langchain_openai import ChatOpenAI
 from langchain.chains import RetrievalQA
 from langchain.prompts import PromptTemplate
@@ -88,7 +88,7 @@ _embeddings_cache = None
 def get_embeddings():
     global _embeddings_cache
     if _embeddings_cache is None:
-        _embeddings_cache = HuggingFaceEmbeddings(model_name="all-MiniLM-L6-v2")
+        _embeddings_cache = FastEmbedEmbeddings(model_name="BAAI/bge-small-en-v1.5")
     return _embeddings_cache
 
 def get_db(session_id: str):
