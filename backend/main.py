@@ -47,9 +47,6 @@ CHROMA_DIR = "./chroma_db"
 os.makedirs(UPLOAD_DIR, exist_ok=True)
 os.makedirs(CHROMA_DIR, exist_ok=True)
 
-# Shared embeddings
-embeddings = HuggingFaceEmbeddings(model_name="all-MiniLM-L6-v2")
-
 # Auth Configuration
 SECRET_KEY = os.getenv("JWT_SECRET_KEY", "fallback_secret_key_change_me_in_production")
 ALGORITHM = "HS256"
@@ -85,6 +82,15 @@ class ToolRequest(BaseModel):
     session_id: str
     content: Optional[str] = ""
 
+# Lazy-load embeddings to prevent Render timeout on startup
+_embeddings_cache = None
+
+def get_embeddings():
+    global _embeddings_cache
+    if _embeddings_cache is None:
+        _embeddings_cache = HuggingFaceEmbeddings(model_name="all-MiniLM-L6-v2")
+    return _embeddings_cache
+
 def get_db(session_id: str):
     sid = session_id.strip()
     if sid in _db_cache:
@@ -93,7 +99,7 @@ def get_db(session_id: str):
     session_path = os.path.join(CHROMA_DIR, sid)
     _db_cache[sid] = Chroma(
         persist_directory=session_path,
-        embedding_function=embeddings,
+        embedding_function=get_embeddings(),
         collection_name="notes"
     )
     return _db_cache[sid]
