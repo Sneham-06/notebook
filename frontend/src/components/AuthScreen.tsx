@@ -13,7 +13,6 @@ interface AuthScreenProps {
 }
 
 export default function AuthScreen({ onLogin }: AuthScreenProps) {
-  const [isLogin, setIsLogin] = useState(true);
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [isLoading, setIsLoading] = useState(false);
@@ -27,34 +26,16 @@ export default function AuthScreen({ onLogin }: AuthScreenProps) {
 
     setIsLoading(true);
     try {
-      if (isLogin) {
-        const formData = new URLSearchParams();
-        formData.append("username", username);
-        formData.append("password", password);
+      const formData = new URLSearchParams();
+      formData.append("username", username);
+      formData.append("password", password);
 
-        const response = await axios.post(`${process.env.NEXT_PUBLIC_API_URL}/auth/login`, formData, {
-          headers: { "Content-Type": "application/x-www-form-urlencoded" }
-        });
-        
-        toast.success(`Welcome back, ${response.data.username}!`);
-        onLogin(response.data.access_token, response.data.username);
-      } else {
-        await axios.post(`${process.env.NEXT_PUBLIC_API_URL}/auth/register`, {
-          username,
-          password
-        });
-        
-        toast.success("Registration successful! Logging you in...");
-        
-        const formData = new URLSearchParams();
-        formData.append("username", username);
-        formData.append("password", password);
-
-        const response = await axios.post(`${process.env.NEXT_PUBLIC_API_URL}/auth/login`, formData, {
-          headers: { "Content-Type": "application/x-www-form-urlencoded" }
-        });
-        onLogin(response.data.access_token, response.data.username);
-      }
+      const response = await axios.post(`${process.env.NEXT_PUBLIC_API_URL}/auth/login`, formData, {
+        headers: { "Content-Type": "application/x-www-form-urlencoded" }
+      });
+      
+      toast.success(`Welcome back, ${response.data.username}!`);
+      onLogin(response.data.access_token, response.data.username);
     } catch (error: any) {
       const msg = error.response?.data?.detail || "Authentication failed. Please try again.";
       toast.error(msg);
@@ -84,12 +65,10 @@ export default function AuthScreen({ onLogin }: AuthScreenProps) {
         </div>
 
         <h1 className="text-3xl font-bold text-center mb-2">
-          {isLogin ? "Welcome to NoteMind" : "Create Account"}
+          Welcome to NoteMind
         </h1>
         <p className="text-text-secondary text-center mb-8 text-sm">
-          {isLogin 
-            ? "Enter your credentials to access your second brain" 
-            : "Sign up to start organizing your knowledge"}
+          Enter your credentials to access your second brain
         </p>
 
         <form onSubmit={handleSubmit} className="space-y-4">
@@ -128,22 +107,12 @@ export default function AuthScreen({ onLogin }: AuthScreenProps) {
           >
             {isLoading ? <Loader2 className="animate-spin" size={20} /> : (
               <>
-                {isLogin ? "Sign In" : "Sign Up"}
+                Sign In
                 <ArrowRight size={18} className="group-hover:translate-x-1 transition-transform" />
               </>
             )}
           </Button>
         </form>
-
-        <div className="mt-8 text-center">
-          <button 
-            onClick={() => setIsLogin(!isLogin)}
-            className="text-sm text-text-secondary hover:text-accent transition-colors"
-          >
-            {isLogin ? "Don't have an account? " : "Already have an account? "}
-            <span className="font-bold">{isLogin ? "Sign up" : "Sign in"}</span>
-          </button>
-        </div>
       </motion.div>
     </div>
   );
