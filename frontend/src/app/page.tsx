@@ -9,7 +9,6 @@ import BlindSpotScanner from "@/components/BlindSpotScanner";
 import TeachMeMode from "@/components/TeachMeMode";
 import BlindSpotMode from "@/components/BlindSpotMode";
 import TimeCapsule from "@/components/TimeCapsule";
-import AuthScreen from "@/components/AuthScreen";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { Mic, X, Download, FileText, CheckCircle2 } from "lucide-react";
@@ -30,8 +29,6 @@ export default function Home() {
   const [activeFolder, setActiveFolder] = useState("1");
   const [isListening, setIsListening] = useState(false);
   const [hasUploaded, setHasUploaded] = useState(false);
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
-  const [username, setUsername] = useState("");
   const [chatHistories, setChatHistories] = useState<{ [key: string]: { role: string; content: string }[] }>({});
 
   const folderNames: { [key: string]: string } = {
@@ -226,17 +223,6 @@ export default function Home() {
     recognition.start();
   };
 
-  const handleLogin = (token: string, user: string) => {
-    // In a real app, you would save this token to localStorage or a cookie.
-    // Here we're just keeping it in state for the session.
-    setIsAuthenticated(true);
-    setUsername(user);
-  };
-
-  if (!isAuthenticated) {
-    return <AuthScreen onLogin={handleLogin} />;
-  }
-
   return (
     <div className="flex h-screen overflow-hidden bg-background">
       {/* Sidebar */}
@@ -323,8 +309,8 @@ export default function Home() {
                 </div>
               </DialogContent>
             </Dialog>
-            <div className="w-8 h-8 rounded-full bg-surface-hover border border-border flex items-center justify-center text-[10px] font-bold uppercase">
-              {username ? username.substring(0, 2) : "JD"}
+            <div className="w-8 h-8 rounded-full bg-surface-hover border border-border flex items-center justify-center text-[10px] font-bold">
+              JD
             </div>
           </div>
         </header>
